@@ -17,6 +17,9 @@ jobs:
       - python/install-packages:
           pkg-manager: pipenv
       - run: 
+          name: Check django install
+          command: python -m pip install Django
+      - run: 
           name: Check nose2 install
           command: pip install nose2
       - run:
