@@ -12,6 +12,7 @@ jobs:
         environment:
           POSTGRES_USER: root
           POSTGRES_DB: circle_test
+    parallelism: 3
     steps:
       - checkout
       - python/install-packages:
@@ -24,7 +25,16 @@ jobs:
           command: pip install nose2
       - run:
           name: Run tests
-          command: nose2 # alternatively run `python -m pytest` if you are running vanilla pytest
+          command: |
+            # get test files while ignoring __init__ files
+            TESTFILES=$(circleci tests glob "catalog/tests/*.py" | sed 's/\S\+__init__.py//g')
+            echo $TESTFILES | tr ' ' '\n' | sort | uniq > circleci_test_files.txt
+            cat circleci_test_files.txt
+            TESTFILES=$(circleci tests split --split-by=timings circleci_test_files.txt)
+            # massage filepaths into format manage.py test accepts
+            TESTFILES=$(echo $TESTFILES | tr "/" "." | sed 's/\.py$//g')
+            echo $TESTFILES
+            nose2 $TESTFILES # alternatively run `python -m pytest` if you are running vanilla pytest
       - store_test_results:
           path: test-results
       - store_artifacts:
